@@ -11,15 +11,44 @@ def fileOpen(fileName, mode):
 		print('There is no file with name', fileName)
 		sys.exit(1)
 
-#get maximum length of transaction in transaction list
-def getMaximumLength(transactionList):
-	maxLen = 0
-	for item in transactionList:
-		if len(item) > maxLen:
-			maxLen = len(item)
+# make frequent pattern list
+'''
+output example
+[
+	{1}, {2}, {3}, {1,2}, {2,3}, {1,3}, {1,2,3}
+]
+'''
+def makeFreqPatternList(transactionList, supportDict):
+	print('\n* making frequent pattern list ...')
+	freqPatternList = []
+	subsetDict = makeLengthOneSubsetsDict(transactionList)
+	freqPatternDict = findFreqPatternDict(subsetDict, [])
+	subsetList = freqPatternDict.keys()
+	supportDict.update(freqPatternDict)
 
-	print('maximum length in the transactions : ' + str(maxLen))
-	return maxLen
+	for item in subsetList:
+		freqPatternList.append(item)
+
+	supersetList = []
+	supersetDict = {}
+	freqPatternDict = {}
+
+	for length in range(2, getMaximumLength(transactionList)):
+		if len(subsetList) < 1:
+			break
+
+		supersetList = makeSupersetList(subsetList, length)
+		supersetDict = makeSupersetDict(transactionList, supersetList)
+		freqPatternDict = findFreqPatternDict(supersetDict, subsetList)
+		supportDict.update(freqPatternDict)
+
+		for item in freqPatternDict.keys():
+			freqPatternList.append(item)
+
+		subsetList = freqPatternDict.keys()
+
+	print('* complete making frequent pattern list')
+	return freqPatternList
 
 # make length-1 subsets dict
 def makeLengthOneSubsetsDict(wholeList):
@@ -69,6 +98,16 @@ def checkIfAllSubsetIsFreq(superset, subsetList):
 	else:
 		return False
 
+#get maximum length of transaction in transaction list
+def getMaximumLength(transactionList):
+	maxLen = 0
+	for item in transactionList:
+		if len(item) > maxLen:
+			maxLen = len(item)
+
+	print('maximum length in the transactions : ' + str(maxLen))
+	return maxLen
+
 # make superset length+1
 '''
 If we have {a,b}, {b,c}, {c,a} ... frequent items, 				(length : 2)
@@ -90,7 +129,6 @@ def makeSupersetList(setList, length):
 				supersetList.append(interSet)
 
 	return supersetList
-
 
 # make superset dict
 '''
@@ -114,46 +152,6 @@ def makeSupersetDict(transactionList, supersetList):
 					supersetDict[superset] = 1
 
 	return supersetDict
-
-
-# make frequent pattern list
-'''
-output example
-[
-	{1}, {2}, {3}, {1,2}, {2,3}, {1,3}, {1,2,3}
-]
-'''
-def makeFreqPatternList(transactionList, supportDict):
-	print('\n* making frequent pattern list ...')
-	freqPatternList = []
-	subsetDict = makeLengthOneSubsetsDict(transactionList)
-	freqPatternDict = findFreqPatternDict(subsetDict, [])
-	subsetList = freqPatternDict.keys()
-	supportDict.update(freqPatternDict)
-
-	for item in subsetList:
-		freqPatternList.append(item)
-
-	supersetList = []
-	supersetDict = {}
-	freqPatternDict = {}
-
-	for length in range(2, getMaximumLength(transactionList)):
-		if len(subsetList) < 1:
-			break
-
-		supersetList = makeSupersetList(subsetList, length)
-		supersetDict = makeSupersetDict(transactionList, supersetList)
-		freqPatternDict = findFreqPatternDict(supersetDict, subsetList)
-		supportDict.update(freqPatternDict)
-
-		for item in freqPatternDict.keys():
-			freqPatternList.append(item)
-
-		subsetList = freqPatternDict.keys()
-
-	print('* complete making frequent pattern list')
-	return freqPatternList
 
 # remove length one frequent pattern
 # When we make association rules, we make it with subsets of frequent patterns.
@@ -244,24 +242,6 @@ def makeSubsetsForAssociationRules(freqPattern):
 
 	return setOfRules
 
-# make formatted set
-# to make 'set format' string
-# ex) set([1,2,3]) -> {1,2,3}
-def makeFormattedSet(inputSet):
-	formattedSetList = []
-	formattedSetList.append('{')
-
-	for item in inputSet:
-		formattedSetList.append(str(item))
-		formattedSetList.append(',')
-
-	del formattedSetList[-1]
-	formattedSetList.append('}')
-
-	return ''.join(formattedSetList)
-
-
-
 # make combinations in frequent patterns
 def combinations(iterable, r):
     # combinations('ABCD', 2) --> AB AC AD BC BD CD
@@ -282,6 +262,22 @@ def combinations(iterable, r):
         for j in range(i+1, r):
             indices[j] = indices[j-1] + 1
         yield tuple(pool[i] for i in indices)
+
+# make formatted set
+# to make 'set format' string
+# ex) set([1,2,3]) -> {1,2,3}
+def makeFormattedSet(inputSet):
+	formattedSetList = []
+	formattedSetList.append('{')
+
+	for item in inputSet:
+		formattedSetList.append(str(item))
+		formattedSetList.append(',')
+
+	del formattedSetList[-1]
+	formattedSetList.append('}')
+
+	return ''.join(formattedSetList)
 
 
 if __name__ == '__main__':
