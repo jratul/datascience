@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*- 
 import sys
-import itertools
 
 # open files
 def fileOpen(fileName, mode):
@@ -288,10 +287,18 @@ if __name__ == '__main__':
 		sys.exit(1)
 
 	# get minimum support, input file name, and output file name from input
-	minimumSupport = int(sys.argv[1])
+	try:
+		minimumSupport = int(sys.argv[1])
+		print 'Minimum Support : ' + str(minimumSupport) + '%'
+	except ValueError as e:
+		print('\n* How to execute : ')
+		print('apriori.exe [minimumSupport] [input_file] [output_file]\n')
+		print('You have to insert integer for the minimum support\n')
+		sys.exit(1)
+
 	inputFileName = sys.argv[2]
 	outputFileName = sys.argv[3]
-	print 'Minimum Support : ' + str(minimumSupport) + '%'
+	
 
 	# open files
 	f = fileOpen(inputFileName, 'r')
@@ -300,23 +307,23 @@ if __name__ == '__main__':
 	# transaction list initialize
 	transactionList = []
 
-	# support dict for frequent patterns
-	supportDict = {}
-
 	# read line from input data file
 	# list of sets
 	while True:
 	    line = f.readline()
 	    if not line: break
 
-	    item_set = line.split()
-	    item_set = map(int, item_set)
+	    itemSet = line.split()
+	    itemSet = map(int, itemSet)
 
-	    transactionList.append(set(item_set))
+	    transactionList.append(set(itemSet))
 
 	# get the number of transactions
 	transactionNum = len(transactionList)
 	print("the number of transaction sets : " + str(transactionNum))
+
+	# support dict for frequent patterns
+	supportDict = {}
 
 	# get the list of the frequent items
 	freqPatternList = makeFreqPatternList(transactionList, supportDict)
