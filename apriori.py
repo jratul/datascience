@@ -70,7 +70,7 @@ def findFreqPatternDict(inputDict, subsetList):
 	freqPatternDict = {}
 
 	for key in inputDict:
-		if (inputDict[key] / float(transactionNum) * 100) > minimumSupport:
+		if (inputDict[key] / float(transactionNum) * 100) >= minimumSupport:
 			if len(key) > 1 and not(checkIfAllSubsetIsFreq(key, subsetList)):
 				continue
 			freqPatternDict[key] = inputDict[key]
@@ -189,17 +189,17 @@ def makeAssociationRules(transactionList, transactionNum, freqPatternList, fWrit
 				+ '\t'
 				+ makeFormattedSet(subsetList[j][1])
 				+ '\t'
-				+ str(support)
+				+ str('%.2f'%support)
 				+ '\t'
-				+ str(confidence))
+				+ str('%.2f'%confidence))
 
 			fWrite.write(makeFormattedSet(subsetList[j][0]) 
 				+ '\t'
 				+ makeFormattedSet(subsetList[j][1])
 				+ '\t'
-				+ str(support)
+				+ str('%.2f'%support)
 				+ '\t'
-				+ str(confidence)
+				+ str('%.2f'%confidence)
 				+ '\n')
 			cnt += 1
 
