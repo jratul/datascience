@@ -61,6 +61,7 @@ Move to the folder with apriori.py and input file.
 And insert the command.  
   
 > $ python apriori.py [minimum\_support] [input\_file\_name] [output\_file\_name]  
+
 <br>    
   
 ## 5. This program passed the test.
