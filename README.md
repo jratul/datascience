@@ -31,26 +31,33 @@ I uploaded the setup.py as well. You can use it like a Makefile.
   
 > $ python setup.py py2exe  
   
-  
+<br>
+
 ![](pic/06.jpg)  
 (6) After that, you can get the exe file.
+
 <br>    
   
 ![](pic/07.jpg)
 (7) The exe file will be in the 'dist' folder.
+
 <br>    
   
 ## 3. How to execute exe file
-<br>    
+
+<br>
+
 ![](pic/08.jpg)
 Move to directory with apriori.exe and input file.  
 And insert the command.
   
 > $ apriori.exe [minimum\_support] [input\_file\_name] [output\_file\_name]  
   
-<br>    
+<br>
+
 ![](pic/09.jpg)  
 You can get the answer.  
+
 <br>    
   
 ## 4. How to test without exe file  
