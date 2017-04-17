@@ -78,11 +78,13 @@ def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 	infoDict = collections.OrderedDict()
 	infoDict = calInfoDict(valueDict, len(node.tuples))
 	infoGainDict = calInfoGain(totalInfoDict, infoDict)
+
 	if method == 'infoGain':
 		scoreDict = infoGainDict
 	elif method == 'gainRatio':
-		scoreDict = collections.OrderedDict()
 		scoreDict = calGainRatio(valueDict, infoGainDict, len(node.tuples), classLabel, classLabelValueList)
+	elif method == 'giniIndex':
+		scoreDict = calGiniIndex(valueDict, len(node.tuples), classLabel, classLabelValueList)
 
 	# find attribute for decision by information gain dictionary
 	attributeForDecision = findAttributeForDecision(scoreDict, method)
@@ -238,17 +240,53 @@ def calGainRatio(valueDict, totalInfoDict, numOfTuples, classLabel, classLabelVa
 			ratioItem = 0
 			for classLabel in classLabelValueList:
 				ratioItem += value2[classLabel]
-			#print(key, 'ratioItem : ' , ratioItem)
-			#print('num of tuples : ' , str(numOfTuples))
 			split += calExpInfo(ratioItem, numOfTuples)
-			#print('split item', calExpInfo(ratioItem, numOfTuples))
-		#print(key, ' split : ', split)
-		#print('totalInfo : ', totalInfoDict[key])
-		#print('gainRatio : ', totalInfoDict[key]/split)
 
 		gainRatioDict[key] = totalInfoDict[key] / split
 
 	return gainRatioDict
+
+def calGiniIndex(valueDict, numOfTuples, classLabel, classLabelValueList):
+	giniDict = collections.OrderedDict()
+
+	for key, value in valueDict.items():
+		candidateForGini = []
+		for key2, value2 in value.items():
+			hasKey = 0
+			hasKeyDict = collections.OrderedDict()
+			notHasKey = 0
+			notHasKeyDict = collections.OrderedDict()
+			for key3, value3 in value.items():
+				if key2 == key3:
+					for classLabel in classLabelValueList:
+						hasKey += value3[classLabel]
+						if classLabel in hasKeyDict:
+							hasKeyDict[classLabel] += value3[classLabel]
+						else:
+							hasKeyDict[classLabel] = value3[classLabel]
+				else:
+					for classLabel in classLabelValueList:
+						notHasKey += value3[classLabel]
+						if classLabel in notHasKeyDict:
+							notHasKeyDict[classLabel] += value3[classLabel]
+						else:
+							notHasKeyDict[classLabel] = value3[classLabel]
+
+			hasKeyValue = calGiniIndexItem(hasKey, numOfTuples, hasKeyDict)
+			notHasKeyValue = calGiniIndexItem(notHasKey, numOfTuples, notHasKeyDict)
+
+			candidateForGini.append(hasKeyValue + notHasKeyValue)
+
+		giniDict[key] = min(candidateForGini)
+
+	return giniDict
+
+def calGiniIndexItem(numOfHasKey, numOfTuples, hasKeyDict):
+	sumOfClassLabelItem = 0
+	for key, value in hasKeyDict.items():
+		sumOfClassLabelItem += (value / float(numOfHasKey)) * (value / float(numOfHasKey))
+
+	return numOfHasKey / float(numOfTuples) * (1-sumOfClassLabelItem)
 
 def findAttributeForDecision(scoreDict, method):
 	attributeForDecision = ''
@@ -260,7 +298,13 @@ def findAttributeForDecision(scoreDict, method):
 			if value > maxInfoGain:
 				maxInfoGain = value
 				attributeForDecision = key
+	elif method == 'giniIndex':
+		minGiniIndex = -1
 
+		for key, value in scoreDict.items():
+			if value < minGiniIndex or minGiniIndex == -1:
+				minGiniIndex = value
+				attributeForDecision = key
 
 	return attributeForDecision
 
@@ -422,7 +466,7 @@ if __name__ == '__main__':
 	expandDecisionTree(rootNode, "gainRatio", classLabel)
 
 	treeFile = open("tree.txt", "w")
-	printDecisionTree(rootNode, treeFile)
+	#printDecisionTree(rootNode, treeFile)
 
 	classifyTestData(testFile, outputFile, rootNode, attributes, classLabel)
 
