@@ -2,10 +2,17 @@
 import sys				#arvg, exit
 import collections		#orderedDict
 import math 			#log
-import pygraphviz as pg
 
 # class for decision tree
 class DecisionTree():
+	'''
+	key : attribute
+	value : attribute value
+	children : children nodes
+	tuples : data tuple in node
+	attributesRemained : attributes that are not used for classification yet
+	label : If the node is leaf, it has label. If not, it is 'unlabeled'
+	'''
 	def __init__(self, key, value):
 		self.key = key
 		self.value = value
@@ -23,12 +30,23 @@ def fileOpen(fileName, mode):
 		print('There is no file with name', fileName)
 		sys.exit(1)
 
+# first line of training file is the list of attributes
+# we can get attributes here
 def getAttributes(trainingFile):
 	attributeLine = trainingFile.readline()
 	attributes = attributeLine.split()
 
 	return attributes
 
+# read data tuples, and make list of the tuples
+# tuple will be saved in dictionary form
+'''
+[
+	{"age" : "<=30", "income" : "high", ...},
+	{"age" : "40", ...}, 
+	...
+]
+'''
 def makeTupleList(trainingFile, attributes):
 	tupleList = []
 
@@ -46,23 +64,29 @@ def makeTupleList(trainingFile, attributes):
 
 	return tupleList
 
+# expanding the decision tree
 def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
+	# if this node has the class label for attributesRemained, this node can't expand children.
+	# so we have to label this node by voting.
 	if len(node.attributesRemained) == 1:
 		node.label = getPossibleLabelByVoting(node.tuples, classLabel)
 		return
 
+	# decide whether this node can be labeled or not.
+	# if every tuples in this node have the same class label value, this node can be labeled.
 	label = getPossibleLabel(node.tuples, classLabel)
 	if label != '':
 		node.label = label
 		return
 
+	# root node need to be marked for getting class label values.	
 	isRoot = False
 	if node.key == 'root':
 		isRoot = True
 
+	# make attributes dict
 	attributeDict = collections.OrderedDict()
-	#make attributes dict
-	attributeDict = makeAttributeDict(node.tuples, node.attributesRemained, classLabel, classLabelValueList,isRoot)
+	attributeDict = makeAttributeDict(node.tuples, node.attributesRemained, classLabel, classLabelValueList, isRoot)
 
 	# make attribute value dict
 	valueDict = collections.OrderedDict()
@@ -71,11 +95,11 @@ def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 	# count num of tuples for getting information gain
 	valueDict = countTupleNumForInfoGain(node.tuples, valueDict, classLabel, node.attributesRemained)
 
-	# calculate information gain
+	# calculate score dictionary for information gain, gain ratio, or gini index
 	scoreDict = collections.OrderedDict()
 	totalInfoDict = collections.OrderedDict()
-	totalInfoDict = calTotalInfo(valueDict, len(node.tuples), classLabel, classLabelValueList)
 	infoDict = collections.OrderedDict()
+	totalInfoDict = calTotalInfo(valueDict, len(node.tuples), classLabel, classLabelValueList)
 	infoDict = calInfoDict(valueDict, len(node.tuples))
 	infoGainDict = calInfoGain(totalInfoDict, infoDict)
 
@@ -86,7 +110,7 @@ def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 	elif method == 'giniIndex':
 		scoreDict = calGiniIndex(valueDict, len(node.tuples), classLabel, classLabelValueList)
 
-	# find attribute for decision by information gain dictionary
+	# find attribute for decision by score dictionary
 	attributeForDecision = findAttributeForDecision(scoreDict, method)
 	if attributeForDecision == '':
 		return
@@ -107,9 +131,23 @@ def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 		if len(value.tuples) != 0:
 			node.children.append(value)
 
+	# expand the decision tree recursively
 	for item in node.children:
 		expandDecisionTree(item, method, classLabel, classLabelValueList)
 
+# making attribute dictionary
+# outputs like this : 
+'''
+attributeDictionary
+{
+	"age" : ["<=30", "31...40", ">40"],
+	"income" : ["high", "med", "low"],
+	...
+}
+
+classLabelValueList
+["yes", "no"]
+'''
 def makeAttributeDict(tupleList, attributesRemained, classLabel, classLabelValueList, isRoot = False):
 	attributeDict = collections.OrderedDict()
 
@@ -136,6 +174,26 @@ def makeAttributeDict(tupleList, attributesRemained, classLabel, classLabelValue
 
 	return attributeDict
 
+# making value dictionary for counting
+'''
+output like this : 
+{
+	"age" : {
+		"<=30" : {
+			"yes" : 0,
+			"no" : 0
+		},
+		"31...40" : {
+			"yes" : 0,
+			"no" : 0
+		}, ...
+	},
+	"income" : {
+		...
+	}
+	...
+}
+'''
 def makeValueDict(valueDict, tupleList, attributeDict, classLabel, attributes):
 	classLabelValues = attributeDict[classLabel]
 
@@ -158,6 +216,26 @@ def makeValueDict(valueDict, tupleList, attributeDict, classLabel, attributes):
 
 	return valueDict
 
+# this process is exactly fill the blanks of valueDict by counting
+'''
+output like this : 
+{
+	"age" : {
+		"<=30" : {
+			"yes" : 2,
+			"no" : 3
+		},
+		"31...40" : {
+			"yes" : 4,
+			"no" : 0
+		}, ...
+	},
+	"income" : {
+		...
+	}
+	...
+}
+'''
 def countTupleNumForInfoGain(tupleList, valueDict, classLabel, attributes):
 	for tupleItem in tupleList:
 		classLabelValue = tupleItem[classLabel]
@@ -169,6 +247,7 @@ def countTupleNumForInfoGain(tupleList, valueDict, classLabel, attributes):
 
 	return valueDict
 
+# calculate expected information of each attributes
 def calInfoDict(valueDict, numOfTuples):
 	infoDict = collections.OrderedDict()
 
@@ -183,6 +262,7 @@ def calInfoDict(valueDict, numOfTuples):
 
 	return infoDict			
 
+# calculate expected information item of each attribute values
 def calItemOfInfoGain(numOfTuples, countedValuesOfOneCate):
 	sumOfValues = getSumOfValues(countedValuesOfOneCate)
 
@@ -192,6 +272,7 @@ def calItemOfInfoGain(numOfTuples, countedValuesOfOneCate):
 
 	return sumOfValues/float(numOfTuples) * sumOfExpInfo
 
+# 
 def getSumOfValues(countedValues):
 	result = 0
 
@@ -292,19 +373,9 @@ def findAttributeForDecision(scoreDict, method):
 	attributeForDecision = ''
 
 	if method == 'infoGain' or method == 'gainRatio':
-		maxInfoGain = 0
-
-		for key, value in scoreDict.items():
-			if value > maxInfoGain:
-				maxInfoGain = value
-				attributeForDecision = key
+		attributeForDecision = max(scoreDict, key=scoreDict.get)
 	elif method == 'giniIndex':
-		minGiniIndex = -1
-
-		for key, value in scoreDict.items():
-			if value < minGiniIndex or minGiniIndex == -1:
-				minGiniIndex = value
-				attributeForDecision = key
+		attributeForDecision = min(scoreDict, key=scoreDict.get)
 
 	return attributeForDecision
 
@@ -325,42 +396,9 @@ def getPossibleLabelByVoting(tuples, classLabel):
 		else:
 			labelDict[item[classLabel]] += 1
 
-	maxNum = 0
-	possibleLabel = ''
-	for key, value in labelDict.items():
-		if value > maxNum:
-			maxNum = value
-			possibleLabel = key
+	possibleLabel = max(labelDict, key=labelDict.get)
 
 	return possibleLabel
-
-def printDict(inputDict):
-	for key, value in inputDict.items():
-		print(key, value)
-
-def printDecisionTree(node, treeFile):
-	
-	print('node key : ' + node.key)
-	print('node value : ' + str(node.value))
-	print('node tuples : ')
-	treeFile.write('node key : ' + node.key + '\n')
-	treeFile.write('node value : ' + str(node.value) + '\n')
-	treeFile.write('node tuples # : ' + str(len(node.tuples)) + '\n')
-
-	for item in node.tuples:
-		print(item)
-		#treeFile.write(item)
-
-	print('remained attributes : ' + str(node.attributesRemained))
-	print('node label : ' + node.label)
-	print('\n\n')
-
-	treeFile.write('remained attributes : ' + str(node.attributesRemained) + '\n')
-	treeFile.write('node label : ' + node.label + '\n')
-	treeFile.write('\n\n')
-
-	for child in node.children:
-		printDecisionTree(child, treeFile)
 
 def classifyTestData(testFile, outputFile, rootNode, attributes, classLabel):
 	attributeStr = '\t'.join(attributes)
@@ -410,27 +448,10 @@ def findLabel(tupleItem, node, classLabel):
 				if len(child.tuples) > maxNum:
 					maxNum = len(child.tuples)
 					maxLabel = child.value
-
+			
 			for child in node.children:
 				if child.value == maxLabel:
 					findLabel(tupleItem, child, classLabel)
-
-def makeGraph(node, graph):
-    #parentStr = node.key + ' ' + str(node.value) + ' ' + node.label + ' ' + str(len(node.tuples))
-    parentStr = str(len(node.tuples)) + '.' + node.key + ':' + str(node.value)
-    for child in node.children:
-        #childStr = child.key + ' ' + child.value + ' ' + child.label + ' ' + str(len(child.tuples))
-        childStr = str(len(child.tuples)) + '.' + child.key + ':' + child.value
-        graph.add_edge(parentStr, childStr)
-        makeGraph(child,graph)
-
-def drawGraph(graph):
-	graph.layout(prog='dot')
-    
-	graph.draw('file.png')
-    
-	graph.graph_attr.update(size="2,12")
-	graph.graph_attr.update(ratio="compress")
 
 
 if __name__ == '__main__':
@@ -445,7 +466,7 @@ if __name__ == '__main__':
 	testFileName = sys.argv[2]
 	outputFileName = sys.argv[3]
 
-	# open file
+	# open files
 	trainingFile = fileOpen(trainingFileName, 'r')
 	testFile = fileOpen(testFileName, 'r')
 	outputFile = fileOpen(outputFileName, 'w')
@@ -466,17 +487,13 @@ if __name__ == '__main__':
 	expandDecisionTree(rootNode, "gainRatio", classLabel)
 
 	treeFile = open("tree.txt", "w")
-	#printDecisionTree(rootNode, treeFile)
 
 	classifyTestData(testFile, outputFile, rootNode, attributes, classLabel)
 
-	#graph = pg.AGraph(directed=True, strict=True)
-
-	#makeGraph(rootNode, graph)
-
-	#drawGraph(graph)
-	
-
+	# close files
+	trainingFile.close()
+	testFile.close()
+	outputFileName.close()
 
 
 
