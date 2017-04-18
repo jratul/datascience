@@ -272,7 +272,7 @@ def calItemOfInfoGain(numOfTuples, countedValuesOfOneCate):
 
 	return sumOfValues/float(numOfTuples) * sumOfExpInfo
 
-# 
+# get sum of tuples that have certain attribute value
 def getSumOfValues(countedValues):
 	result = 0
 
@@ -281,11 +281,13 @@ def getSumOfValues(countedValues):
 
 	return result
 
+# calculate expected information
 def calExpInfo(nume,dino):
 	if(nume == 0):
 		return 0
 	return -(nume/float(dino) * math.log((nume/float(dino)),2))
 
+# calculate total expected information of attribute
 def calTotalInfo(valueDict, numOfTuples, classLabel, classLabelValueList):
 	totalInfoDict = collections.OrderedDict()
 
@@ -304,6 +306,7 @@ def calTotalInfo(valueDict, numOfTuples, classLabel, classLabelValueList):
 
 	return totalInfoDict
 
+# calculate information gain
 def calInfoGain(totalInfoDict, infoDict):
 	infoGainDict = collections.OrderedDict()
 
@@ -312,6 +315,7 @@ def calInfoGain(totalInfoDict, infoDict):
 
 	return infoGainDict
 
+# calculate gain ratio
 def calGainRatio(valueDict, totalInfoDict, numOfTuples, classLabel, classLabelValueList):
 	gainRatioDict = collections.OrderedDict()
 
@@ -327,6 +331,7 @@ def calGainRatio(valueDict, totalInfoDict, numOfTuples, classLabel, classLabelVa
 
 	return gainRatioDict
 
+# calculate gini index
 def calGiniIndex(valueDict, numOfTuples, classLabel, classLabelValueList):
 	giniDict = collections.OrderedDict()
 
@@ -362,6 +367,7 @@ def calGiniIndex(valueDict, numOfTuples, classLabel, classLabelValueList):
 
 	return giniDict
 
+# calculate gini index item
 def calGiniIndexItem(numOfHasKey, numOfTuples, hasKeyDict):
 	sumOfClassLabelItem = 0
 	for key, value in hasKeyDict.items():
@@ -369,6 +375,7 @@ def calGiniIndexItem(numOfHasKey, numOfTuples, hasKeyDict):
 
 	return numOfHasKey / float(numOfTuples) * (1-sumOfClassLabelItem)
 
+# With score dictionary, we have to find attribute for certain step
 def findAttributeForDecision(scoreDict, method):
 	attributeForDecision = ''
 
@@ -379,6 +386,8 @@ def findAttributeForDecision(scoreDict, method):
 
 	return attributeForDecision
 
+# decide whether this node can be labeled or not.
+# if every tuples in this node have the same class label value, this node can be labeled.
 def getPossibleLabel(tuples, classLabel):
 	firstValue = tuples[0][classLabel]
 
@@ -388,6 +397,8 @@ def getPossibleLabel(tuples, classLabel):
 
 	return firstValue
 
+# if this node has the class label for attributesRemained, this node can't expand children.
+# so we have to label this node by voting.
 def getPossibleLabelByVoting(tuples, classLabel):
 	labelDict = {}
 	for item in tuples:
@@ -400,6 +411,9 @@ def getPossibleLabelByVoting(tuples, classLabel):
 
 	return possibleLabel
 
+# read test file
+# input each tuple into the decision tree, and find the label
+# after finding the label, write the tuple with label into output file
 def classifyTestData(testFile, outputFile, rootNode, attributes, classLabel):
 	attributeStr = '\t'.join(attributes)
 	outputFile.write(attributeStr+'\n')
@@ -428,6 +442,7 @@ def classifyTestData(testFile, outputFile, rootNode, attributes, classLabel):
 		valueStr = '\t'.join(item.values())
 		outputFile.write(valueStr+'\n')
 
+# from the root node, find the label along the decision tree recursively
 def findLabel(tupleItem, node, classLabel):
 	if node.label != 'unlabeled':
 		tupleItem[classLabel] = node.label
@@ -493,7 +508,7 @@ if __name__ == '__main__':
 	# close files
 	trainingFile.close()
 	testFile.close()
-	outputFileName.close()
+	outputFile.close()
 
 
 
