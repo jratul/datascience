@@ -68,7 +68,7 @@ def makeTupleList(trainingFile, attributes):
 def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 	# if this node has the class label for attributesRemained, this node can't expand children.
 	# so we have to label this node by voting.
-	if len(node.attributesRemained) == 1:
+	if len(node.attributesRemained) == 1 or len(node.tuples) < 5:
 		node.label = getPossibleLabelByVoting(node.tuples, classLabel)
 		return
 
