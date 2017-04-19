@@ -68,6 +68,8 @@ def makeTupleList(trainingFile, attributes):
 def expandDecisionTree(node, method, classLabel, classLabelValueList = []):
 	# if this node has the class label for attributesRemained, this node can't expand children.
 	# so we have to label this node by voting.
+	# and if this node has too few tuples, the tree will be cut here. 
+	# 5 is the threshold that got the highest accuracy.
 	if len(node.attributesRemained) == 1 or len(node.tuples) < 5:
 		node.label = getPossibleLabelByVoting(node.tuples, classLabel)
 		return
@@ -177,6 +179,7 @@ def makeAttributeDict(tupleList, attributesRemained, classLabel, classLabelValue
 # making value dictionary for counting
 '''
 output like this : 
+value dictionary
 {
 	"age" : {
 		"<=30" : {
@@ -196,8 +199,6 @@ output like this :
 '''
 def makeValueDict(valueDict, tupleList, attributeDict, classLabel, attributes):
 	classLabelValues = attributeDict[classLabel]
-
-	tempDict = collections.OrderedDict()
 
 	for key, value in attributeDict.items():
 		if key == classLabel:
@@ -495,14 +496,18 @@ if __name__ == '__main__':
 	# separate class label from other attributes
 	classLabel = attributes[-1]
 
+	# create root node of decision tree
+	# root node has every tuple and every attribute.
 	rootNode = DecisionTree("root",0)
 	rootNode.tuples = tupleList
 	rootNode.attributesRemained = attributes
 
+	# expand decision tree from the root node
+	# this function will take method (ex. 'infoGain', 'gainRatio', 'giniIndex')
 	expandDecisionTree(rootNode, "gainRatio", classLabel)
 
-	treeFile = open("tree.txt", "w")
-
+	# read test file
+	# and classify tuples in test file a
 	classifyTestData(testFile, outputFile, rootNode, attributes, classLabel)
 
 	# close files
