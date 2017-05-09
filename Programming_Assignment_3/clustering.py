@@ -2,6 +2,7 @@
 import sys 			#arvg, exit
 import collections 	#orderedDict
 import math 		#sqrt
+import re 			#sub
 
 class ObjectNode():
 	def __init__(self, nodeId, xCoor, yCoor):
@@ -38,14 +39,18 @@ def getInputObjects(inputFile):
 
 	return inputObjects
 
-def connectObjectNodes(inputObjects, eps):
+def connectObjectNodes(inputObjects, eps, minPts):
 	for idx in range(0, len(inputObjects)):
-		print "connecting " + str(idx) + "object node..."
+		if idx % 100 == 0:
+			print "connecting " + str(idx) + " / " + str(len(inputObjects)) + " object node..."
 		for idx2 in range(0, len(inputObjects)):
 			directDensityReachable = checkDirectDensityReachable(inputObjects[idx], inputObjects[idx2], eps)
 
 			if directDensityReachable:
 				inputObjects[idx].pointing.append(inputObjects[idx2])
+
+		if len(inputObjects[idx].pointing) < minPts:
+			inputObjects[idx].pointing = []
 
 
 def doClustering(inputObjects, clusterList, minPts, eps):
@@ -147,7 +152,16 @@ def calDistance(coreObject, otherObject):
 
 	return math.sqrt(xPart + yPart)
 
-	
+
+def writeClusters(clusterList, numOfCluster, inputFileNum):
+	for idx in range(0, numOfCluster):
+		outputFileName = "input" + str(inputFileNum) + "_cluster_" + str(idx) + ".txt"
+		outputFile = fileOpen(outputFileName, 'w')
+
+		for item in clusterList[idx]:
+			outputFile.write(str(item) + '\n')
+
+		outputFile.close()
 
 
 
@@ -164,6 +178,15 @@ if __name__ == '__main__':
 	numOfCluster = int(sys.argv[2])
 	eps = float(sys.argv[3])
 	minPts = int(sys.argv[4])
+
+	inputFileNum = inputFileName
+	#inputFileNum.replace("input", "")
+	#inputFileNum.replace(".txt", "")
+	#inputFileNum.strip("input.txt")
+	#re.sub("\D", '', inputFileNum)
+	#re.findall('\d+', inputFileNum)
+	inputFileNum = int(filter(str.isdigit,inputFileNum))
+	print inputFileNum
 
 	# open file
 	inputFile = fileOpen(inputFileName, 'r')
@@ -195,20 +218,22 @@ if __name__ == '__main__':
 		print(str(item['id']) + " : " + str(item['pts']))
 	'''
 
-	connectObjectNodes(inputObjects, eps)
+	connectObjectNodes(inputObjects, eps, minPts)
 
 	sys.setrecursionlimit(10000)
 
 	doClustering3(inputObjects, clusterList, minPts, eps)
 
-	sortedClusterList = clusterList.sort(key=len, reverse=True)
+	clusterList.sort(key=len, reverse=True)
 
 	for idx in range(0, numOfCluster):
 		print str(len(clusterList[idx])) + " size"
 		print clusterList[idx]
 		print '\n'
 
-	
+	writeClusters(clusterList, numOfCluster, inputFileNum)
+
+	inputFile.close()
 
 
 
