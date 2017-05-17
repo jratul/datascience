@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-import sys 			#arvg, exit
-import collections 	#orderedDict
-import math 		#sqrt
-import re 			#sub
-import matplotlib.pyplot as plt
-
+import sys 		#arvg, exit
+import math 	#sqrt
+ 
+# class for data object
 class ObjectNode():
+	'''
+	nodeId : node's id
+	xCoor : node's x coordinate
+	yCoor : node's y coordinate
+	cluster : node's cluster number. if it is -1, the node is not in cluster.
+	pointing : other reachable(in eps) nodes from this node
+	'''
 	def __init__(self, nodeId, xCoor, yCoor):
 		self.nodeId = nodeId
 		self.xCoor = xCoor
 		self.yCoor = yCoor
 		self.cluster = -1
 		self.pointing = []
-
 
 # open files
 def fileOpen(fileName, mode):
@@ -34,104 +38,106 @@ def getInputObjects(inputFile):
 
 		values = line.split()
 
+		'''
+		values[0] : node's id
+		values[1] : node's x coordinate
+		values[2] : node's y coordinate
+		'''
 		objectNode = ObjectNode(int(values[0]), float(values[1]), float(values[2]))
 
 		inputObjects.append(objectNode)
 
 	return inputObjects
 
+# connect reachable objects
+# If the distance of point A, and B is smaller than eps,
+# they are reachable to each other.
 def connectObjectNodes(inputObjects, eps, minPts):
 	for idx in range(0, len(inputObjects)-1):
+		# This process takes long time, if there are too many data objects.
+		# To inform the user how much proceeded, print the number of objects.
 		if idx % 100 == 0:
 			print "connecting " + str(idx) + " / " + str(len(inputObjects)) + " object node..."
+
+		# If the pair of objects are reachable, add each other into 'pointing' list.
 		for idx2 in range(idx+1, len(inputObjects)):
-			directDensityReachable = checkDirectDensityReachable(inputObjects[idx], inputObjects[idx2], eps)
+			directDensityReachable = checkReachable(inputObjects[idx], inputObjects[idx2], eps)
 
 			if directDensityReachable:
 				inputObjects[idx].pointing.append(inputObjects[idx2])
 				inputObjects[idx2].pointing.append(inputObjects[idx])
 
-		#if len(inputObjects[idx].pointing) < minPts:
-		#	inputObjects[idx].pointing = []
-
-def doClustering(inputObjects, clusterList, minPts, eps):
-	print "\nstart clustering"
-	for item in inputObjects:
-		if item.cluster != -1:
-			continue
-
-		if len(item.pointing) >= minPts:
-			currentCluster = []
-			item.cluster = len(clusterList)
-			currentCluster.append(item)
-			
-			for node in item.pointing:
-				if node.cluster != -1:
-					continue
-
-				#node.cluster = item.cluster
-				#currentCluster.append(node)
-
-				if len(node.pointing) >= minPts:
-					expandCluster(node, item.cluster, currentCluster, minPts)
-
-			clusterList.append(currentCluster)
-
-
-
-def expandCluster(nodeObject, clusterId, currentCluster, minPts):
-	nodeObject.cluster = clusterId
-	currentCluster.append(nodeObject)
-
-	if len(nodeObject.pointing) < minPts:
-		return
-
-	for pointedNode in nodeObject.pointing:
-		if pointedNode.cluster != -1 or len(pointedNode.pointing) < minPts:
-			continue
-		#if len(nodeObject.pointing) == 0:
-		#	return
-		expandCluster(pointedNode, clusterId, currentCluster, minPts)
-
-def doClustering2(inputObjects, clusterList, minPts):
-	for targetObject in inputObjects:
-		if targetObject.cluster != -1 or len(targetObject.pointing) < minPts:
-			continue
-
-		currentCluster = []
-		currentCluster.append(targetObject)
-		clusterId = len(clusterList)
-
-		expandCluster2(targetObject, clusterId, currentCluster, minPts)
-
-		clusterList.append(currentCluster)
-		
-def expandCluster2(coreObject, clusterId, currentCluster, minPts):
-	for neighborObject in coreObject.pointing:
-		if neighborObject.cluster != -1:
-			continue
-
-		neighborObject.cluster = clusterId
-		currentCluster.append(neighborObject)
-
-		if len(neighborObject.pointing) >= minPts:
-			expandCluster2(neighborObject, clusterId, currentCluster, minPts)
-
-def checkDirectDensityReachable(coreObject, otherObject, eps):
+# check if the pair of objects are reachable
+# If the distance of the two points is less than eps,
+# they are reachable to each other.
+def checkReachable(coreObject, otherObject, eps):
 	distance = calDistance(coreObject, otherObject)
 
-	if distance < eps:
+	if distance <= eps:
 		return True
 	else:
 		return False
 
+# calculate euclidean distance of the two points
 def calDistance(coreObject, otherObject):
 	xPart = (coreObject.xCoor - otherObject.xCoor) * (coreObject.xCoor - otherObject.xCoor)
 	yPart = (coreObject.yCoor - otherObject.yCoor) * (coreObject.yCoor - otherObject.yCoor)
 
 	return math.sqrt(xPart + yPart)
 
+# DBSCAN clustering
+def doClustering(inputObjects, clusterList, minPts):
+	#It scans every node sequentially.
+	for targetObject in inputObjects:
+		'''
+		If the cluster value of target object is not -1,
+		it means the target object is already in a specific cluster.
+		And if the number of reachable objects from target object is less than minPts,
+		it means the target object is not core point.
+		In these above two cases, the target object can't expand the cluster.
+		'''
+		if targetObject.cluster != -1 or len(targetObject.pointing) < minPts:
+			continue
 
+		'''
+		If the target object is core point, a new cluster will be formed.
+		The target object will be put into the new cluster,
+		and the cluster value of the target object will be assigned.
+		'''
+		currentCluster = []
+		currentCluster.append(targetObject)
+		clusterId = len(clusterList)
+		targetObject.cluster = clusterId
+
+		'''
+		Because the target object is core point, it will expand the cluster.
+		'''
+		expandCluster(targetObject, clusterId, currentCluster, minPts)
+
+		'''
+		After the end of expanding cluster,
+		the cluster will be saved in the cluster list.
+		'''
+		clusterList.append(currentCluster)
+
+# expand cluster
+def expandCluster(coreObject, clusterId, currentCluster, minPts):
+	# visit every neighbor object of the core object
+	for neighborObject in coreObject.pointing:
+		# If the neighbor object is already in a specific cluster, continue
+		if neighborObject.cluster != -1:
+			continue
+
+		# Otherwise, the neighbor object will be put into the current cluster.
+		neighborObject.cluster = clusterId
+		currentCluster.append(neighborObject)
+
+		# check if the number of neighbor objects is more than minPts.
+		# If then, expand the cluster recursively.
+		if len(neighborObject.pointing) >= minPts:		
+			expandCluster(neighborObject, clusterId, currentCluster, minPts)
+
+# write the clusters into the output files
 def writeClusters(clusterList, numOfCluster, inputFileNum):
 	for idx in range(0, numOfCluster):
 		outputFileName = "input" + str(inputFileNum) + "_cluster_" + str(idx) + ".txt"
@@ -141,28 +147,6 @@ def writeClusters(clusterList, numOfCluster, inputFileNum):
 			outputFile.write(str(item.nodeId) + '\n')
 
 		outputFile.close()
-
-def showScatterChart(clusterList, numOfCluster):
-	xCoorList = []
-	yCoorList = []
-
-	for item in clusterList:
-		xCoors = []
-		yCoors = []
-
-		for node in item:
-			xCoors.append(node.xCoor)
-			yCoors.append(node.yCoor)
-		xCoorList.append(xCoors)
-		yCoorList.append(yCoors)
-
-	colorList = ['red', 'yellow', 'green', 'blue', 'black', 'brown', 'purple', 'coral']
-
-	for idx in range(0, numOfCluster):
-		plt.scatter(xCoorList[idx], yCoorList[idx],c=colorList[idx % len(colorList)-1])
-	plt.show()
-
-
 
 if __name__ == '__main__':
 	# check if user inserted 5 arguments
@@ -177,6 +161,7 @@ if __name__ == '__main__':
 	eps = float(sys.argv[3])
 	minPts = int(sys.argv[4])
 
+	# extract input file number from input file name for output file name
 	inputFileNum = inputFileName
 	inputFileNum = int(filter(str.isdigit,inputFileNum))
 
@@ -186,31 +171,30 @@ if __name__ == '__main__':
 	# get input objects
 	inputObjects = getInputObjects(inputFile)
 
-
-
 	# list of list for clusters
 	clusterList = []
 	
+	# connecting the reachable pairs of nodes 
 	connectObjectNodes(inputObjects, eps, minPts)
 
-	#inputObjects.sort(key=lambda x: len(x.pointing), reverse=True)
-
+	# increase the recursion limit of python
 	sys.setrecursionlimit(10000)
 
-	#doClustering(inputObjects, clusterList, minPts, eps)
-	doClustering2(inputObjects, clusterList, minPts)
+	# do clustering
+	doClustering(inputObjects, clusterList, minPts)
 	
-
+	# sort to print TOP K clusters
 	clusterList.sort(key=len, reverse=True)
 
+	# print TOP K clusters
 	for idx in range(0, numOfCluster):
 		print str(len(clusterList[idx])) + " size"
 
+	# write clusters into output files
 	writeClusters(clusterList, numOfCluster, inputFileNum)
 
+	# close input file
 	inputFile.close()
-
-	showScatterChart(clusterList, numOfCluster)
 
 
 
