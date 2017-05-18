@@ -17,4 +17,4 @@ You can execute the source code by python command easily.
 <br>
 
 ## 3. Result of the test  
-![](pic/22.png)  
+![](pic/23.png)  
