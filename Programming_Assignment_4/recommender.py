@@ -143,15 +143,6 @@ def _calPcc(ratingMatrixDict, userId1, userId2, commonItemList, ratingAvgDict):
 	else:
 		return nume / math.sqrt(float(dino1)*float(dino2))
 
-# sort neighbor group by pcc value
-def sortByPcc(pccDict):
-	for key, value in pccDict.items():
-		tempDict = value
-        pccDict[key] = collections.OrderedDict(sorted(tempDict.items(), key=lambda t: t[1], reverse = True))
-        #pccDict[key] = dict(sorted(tempDict.items(), key=itemgetter(1), reverse = True))
-
-	return pccDict
-
 # predict rating
 def predictRating(outputDataTuples, ratingMatrixDict, topK, pccDict): 
 	for item in outputDataTuples:
@@ -201,9 +192,6 @@ def predictRating(outputDataTuples, ratingMatrixDict, topK, pccDict):
 			else:
 				item.rating = random.randrange(1,6)
 
-
-
-
 # write rating values into output file
 def writeRating(outputDataTuples, outputFile):
 	for item in outputDataTuples:
@@ -243,23 +231,6 @@ if __name__ == '__main__':
 
 	# calculate Pearson correlation coefficient
 	pccDict = calPcc(ratingMatrixDict)
-
-	# sort neighbor groups by Pearson correlation coefficient
-	#pccDict = sortByPcc(pccDict)
-
-	pccFile = fileOpen("pccdict.txt", 'w')
-
-	#for key, value in pccDict[1].items():
-	#	print(str(key) + ":" +str(value))
-
-	'''
-	for key, value in pccDict.items():
-		pccFile.write(str(key) + '\n')
-
-		for key2, value2 in value.items():
-			pccFile.write(str(key2) + ":" + str(value2) + "\t")
-		pccFile.write('\n\n')
-	'''
 
 	# open test file
 	testFile = fileOpen(testFileName, 'r')
