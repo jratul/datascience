@@ -74,12 +74,4 @@ And insert the command.
 ## 5. This program passed the test.
   
 ![](pic/11.jpg)  
-  
-<br>    
-## 6. Contact   
-  
-* email : jratul@nate.com
-* mobile : 010-4594-5064  
 
-If you need more information about this, please feel free to contact me.  
-Thank you.
