@@ -8,7 +8,7 @@
 
 ## 2. How to build exe file
 
-![](pic/01.jpg)
+![](pic/01.jpg)  
 (1) You need to install py2exe.  
 Connect to the http://py2exe.org , and click 'downloads' button.  
 <br>    
